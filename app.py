@@ -2,8 +2,10 @@ from flask import Flask, render_template, request, redirect, send_from_directory
 from openai import OpenAI
 import os
 import re
+import requests
 from dotenv import load_dotenv
 from typing import Optional, Tuple
+from datetime import datetime
 
 load_dotenv()
 
@@ -13,79 +15,132 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "your-default-secret-key")
 # Constants
 MAX_TOKENS = 4000
 DEFAULT_MODEL = "openai/gpt-4o"
-LESSON_TEMPLATE = """### Lesson {number}: {title}
+SERVICE_STATUS_FILE = "service_status.txt"
+FALLBACK_CONTENT = {
+    "python": """# Python Programming Basics
 
-**Key Points:**
-- {points}
+### Lesson 1: Introduction to Python
+- Python is an interpreted, high-level language
+- Known for its simple syntax and readability
+- Widely used in web development, data science, and automation
 
-**Summary:**
-{summary}
-"""
+### Lesson 2: Variables and Data Types
+- Variables store data values
+- Basic types: integers, floats, strings, booleans
+- Dynamic typing allows flexible variable usage""",
+    "machine learning": """# Machine Learning Fundamentals
+
+### Lesson 1: What is Machine Learning?
+- Field of AI that enables systems to learn from data
+- Three main types: supervised, unsupervised, reinforcement
+- Applications in recommendation systems, image recognition
+
+### Lesson 2: Basic Algorithms
+- Linear regression for continuous values
+- Decision trees for classification
+- Neural networks for complex patterns""",
+    "default": """# Welcome to UpSkillr
+
+Our AI service is currently unavailable. Here are some options:
+1. Check your internet connection
+2. Try a different topic
+3. Try again later
+
+Suggested topics to explore:
+- Web development basics
+- Data analysis techniques
+- Cloud computing fundamentals"""
+}
+
+def check_service_status() -> bool:
+    """Check if service was recently available."""
+    try:
+        if not os.path.exists(SERVICE_STATUS_FILE):
+            return False
+            
+        with open(SERVICE_STATUS_FILE, 'r') as f:
+            last_success = datetime.fromisoformat(f.read())
+            return (datetime.now() - last_success).total_seconds() < 3600  # 1 hour cache
+    except Exception:
+        return False
+
+def update_service_status():
+    """Record successful service access."""
+    with open(SERVICE_STATUS_FILE, 'w') as f:
+        f.write(datetime.now().isoformat())
 
 def get_ai_client() -> Optional[OpenAI]:
-    """Initialize and return the OpenAI client with better error handling."""
+    """Initialize AI client with comprehensive checks."""
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        app.logger.error("GitHub token missing from environment")
+        return None
+
     try:
-        token = os.getenv("GITHUB_TOKEN")
-        if not token:
-            app.logger.error("GitHub token is missing from environment variables")
+        # Check if API endpoint is reachable
+        response = requests.get("https://models.github.ai", timeout=5)
+        if response.status_code >= 500:
             return None
-            
+    except requests.RequestException:
+        return None
+
+    try:
         client = OpenAI(
             base_url="https://models.github.ai/inference",
-            api_key=token
+            api_key=token,
+            timeout=10
         )
-        
-        # Simple test to verify connection
-        try:
-            client.models.list(timeout=5)
-        except Exception as test_error:
-            app.logger.error(f"AI service connection test failed: {test_error}")
-            return None
-            
+        # Verify connection
+        client.models.list()
+        update_service_status()
         return client
     except Exception as e:
-        app.logger.error(f"Error initializing AI client: {e}")
+        app.logger.error(f"AI client failed: {str(e)}")
         return None
+
+def generate_content(prompt: str) -> Tuple[Optional[str], Optional[str]]:
+    """Generate content with multiple fallback layers."""
+    # Try real AI service first
+    client = get_ai_client()
+    if client:
+        try:
+            response = client.chat.completions.create(
+                model=DEFAULT_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are an expert educator creating micro-courses."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=MAX_TOKENS,
+                timeout=20
+            )
+            return response.choices[0].message.content, None
+        except Exception as e:
+            app.logger.error(f"Generation failed: {str(e)}")
+
+    # Fallback to cached content for common topics
+    topic = prompt.lower().split("about")[-1].strip()
+    for keyword, content in FALLBACK_CONTENT.items():
+        if keyword in topic and keyword != "default":
+            return content, None
+
+    # Final fallback
+    return FALLBACK_CONTENT["default"], None
 
 def estimate_learning_time(text: str) -> str:
     """Estimate learning time based on word count."""
     if not text:
         return "Time estimate unavailable"
-    
     word_count = len(text.split())
     minutes = max(1, round(word_count/100))
     return f"{minutes} minute{'s' if minutes > 1 else ''}"
 
-def generate_content(prompt: str) -> Tuple[Optional[str], Optional[str]]:
-    """Generate content using the AI model with improved error handling."""
-    client = get_ai_client()
-    if not client:
-        return None, "AI service is currently unavailable. Please check your connection and try again later."
-    
-    try:
-        response = client.chat.completions.create(
-            model=DEFAULT_MODEL,
-            messages=[
-                {"role": "system", "content": "You are an expert educator creating micro-courses."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=MAX_TOKENS,
-            timeout=10
-        )
-        return response.choices[0].message.content, None
-    except Exception as e:
-        app.logger.error(f"AI generation error: {str(e)}")
-        return None, "We couldn't generate content right now. Please try again in a moment."
-
 def format_lesson_content(topic: str, content: str) -> str:
-    """Format the lesson content with consistent structure."""
+    """Format lesson content consistently."""
     if not content:
         return content
-    
     if not content.startswith(f"# {topic}"):
         content = f"# {topic}\n\n{content}"
-    
     return content
 
 @app.route('/static/<path:filename>')
@@ -111,16 +166,13 @@ def index():
         content, error = generate_content(prompt)
         
         if error:
-            return render_template('index.html', error=error, topic=topic)
-        
-        if not content:
-            return render_template('index.html', 
-                               error="Content couldn't be generated. Please try a different topic.",
+            service_status = " (Service unavailable)" if not check_service_status() else ""
+            return render_template('index.html',
+                               error=f"Unable to generate content{service_status}. Please try again.",
                                topic=topic)
 
         formatted_content = format_lesson_content(topic, content)
-        
-        return render_template('index.html', 
+        return render_template('index.html',
                            topic=topic,
                            content=formatted_content,
                            estimated_time=estimate_learning_time(content),
@@ -130,7 +182,6 @@ def index():
 
 @app.route('/quiz', methods=['GET'])
 def generate_quiz():
-    """Generate quiz questions based on the course content."""
     topic = request.args.get('topic')
     content = request.args.get('content')
 
@@ -157,7 +208,7 @@ def generate_quiz():
         return render_template('index.html',
                            topic=topic,
                            content=content,
-                           error=f"Quiz error: {error}",
+                           error="Couldn't generate quiz. Try again later.",
                            show_content=True)
 
     questions = []
@@ -188,7 +239,6 @@ def generate_quiz():
 
 @app.route('/submit-quiz', methods=['POST'])
 def submit_quiz():
-    """Process quiz submissions and provide results."""
     topic = request.form.get('topic')
     if not topic:
         return redirect('/')
