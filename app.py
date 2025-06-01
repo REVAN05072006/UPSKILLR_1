@@ -22,17 +22,27 @@ LESSON_TEMPLATE = """### Lesson {number}: {title}
 {summary}
 """
 
-# Initialize GitHub AI client
 def get_ai_client() -> Optional[OpenAI]:
-    """Initialize and return the OpenAI client configured for GitHub AI."""
+    """Initialize and return the OpenAI client with better error handling."""
     try:
         token = os.getenv("GITHUB_TOKEN")
         if not token:
-            raise ValueError("GitHub token is missing from environment variables")
-        return OpenAI(
+            app.logger.error("GitHub token is missing from environment variables")
+            return None
+            
+        client = OpenAI(
             base_url="https://models.github.ai/inference",
             api_key=token
         )
+        
+        # Simple test to verify connection
+        try:
+            client.models.list(timeout=5)
+        except Exception as test_error:
+            app.logger.error(f"AI service connection test failed: {test_error}")
+            return None
+            
+        return client
     except Exception as e:
         app.logger.error(f"Error initializing AI client: {e}")
         return None
@@ -47,10 +57,10 @@ def estimate_learning_time(text: str) -> str:
     return f"{minutes} minute{'s' if minutes > 1 else ''}"
 
 def generate_content(prompt: str) -> Tuple[Optional[str], Optional[str]]:
-    """Generate content using the AI model."""
+    """Generate content using the AI model with improved error handling."""
     client = get_ai_client()
     if not client:
-        return None, "AI service not available. Please check your token and try again."
+        return None, "AI service is currently unavailable. Please check your connection and try again later."
     
     try:
         response = client.chat.completions.create(
@@ -60,19 +70,19 @@ def generate_content(prompt: str) -> Tuple[Optional[str], Optional[str]]:
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=MAX_TOKENS
+            max_tokens=MAX_TOKENS,
+            timeout=10
         )
         return response.choices[0].message.content, None
     except Exception as e:
         app.logger.error(f"AI generation error: {str(e)}")
-        return None, f"AI service error: {str(e)}"
+        return None, "We couldn't generate content right now. Please try again in a moment."
 
 def format_lesson_content(topic: str, content: str) -> str:
     """Format the lesson content with consistent structure."""
     if not content:
         return content
     
-    # Add topic header if not present
     if not content.startswith(f"# {topic}"):
         content = f"# {topic}\n\n{content}"
     
@@ -80,16 +90,14 @@ def format_lesson_content(topic: str, content: str) -> str:
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
-    """Serve static files."""
     return send_from_directory('static', filename)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """Main route for generating micro-courses."""
     if request.method == 'POST':
         topic = request.form.get('topic', '').strip()
         if not topic:
-            return render_template('index.html', error="Topic is required")
+            return render_template('index.html', error="Please enter a topic to learn about")
 
         prompt = f"""Create a comprehensive micro-course about {topic} with 3-5 lessons.
         For each lesson, provide:
@@ -103,7 +111,12 @@ def index():
         content, error = generate_content(prompt)
         
         if error:
-            return render_template('index.html', error=error)
+            return render_template('index.html', error=error, topic=topic)
+        
+        if not content:
+            return render_template('index.html', 
+                               error="Content couldn't be generated. Please try a different topic.",
+                               topic=topic)
 
         formatted_content = format_lesson_content(topic, content)
         
@@ -150,7 +163,7 @@ def generate_quiz():
     questions = []
     question_blocks = [block.strip() for block in quiz_content.split('\n\n') if block.strip()]
     
-    for block in question_blocks[:5]:  # Take max 5 questions
+    for block in question_blocks[:5]:
         lines = [line.strip() for line in block.split('\n') if line.strip()]
         if len(lines) >= 6 and lines[0].startswith('Q'):
             answer_line = lines[-1]
@@ -184,12 +197,10 @@ def submit_quiz():
     results = []
     total_questions = 0
     
-    # Count total questions
     for key in request.form:
         if key.startswith('question_'):
             total_questions += 1
     
-    # Evaluate each question
     for i in range(1, total_questions + 1):
         user_answer = request.form.get(f'q_{i}', '').strip()
         correct_answer = request.form.get(f'correct_full_{i}', '').strip()
@@ -209,7 +220,6 @@ def submit_quiz():
 
     percentage = int((score / total_questions) * 100) if total_questions > 0 else 0
     
-    # Generate feedback based on score
     if percentage >= 80:
         feedback = "Excellent! You've mastered this topic."
     elif percentage >= 60:
