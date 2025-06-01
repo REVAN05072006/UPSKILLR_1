@@ -99,8 +99,10 @@ def get_ai_client() -> Optional[OpenAI]:
         app.logger.error(f"AI client failed: {str(e)}")
         return None
 
+# ... [previous imports and setup remain the same until generate_content] ...
+
 def generate_content(prompt: str) -> Tuple[Optional[str], Optional[str]]:
-    """Generate content with multiple fallback layers."""
+    """Generate content with better fallback handling."""
     # Try real AI service first
     client = get_ai_client()
     if client:
@@ -108,41 +110,56 @@ def generate_content(prompt: str) -> Tuple[Optional[str], Optional[str]]:
             response = client.chat.completions.create(
                 model=DEFAULT_MODEL,
                 messages=[
-                    {"role": "system", "content": "You are an expert educator creating micro-courses."},
+                    {"role": "system", "content": "You are an expert educator creating micro-courses. Provide only the course content, no introductory text."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,
                 max_tokens=MAX_TOKENS,
                 timeout=20
             )
-            return response.choices[0].message.content, None
+            content = response.choices[0].message.content
+            # Clean up any duplicate headers
+            if content.startswith("#"):
+                content = "\n".join([line for line in content.split("\n") if not line.strip().startswith("# ")][1:])
+            return content, None
         except Exception as e:
             app.logger.error(f"Generation failed: {str(e)}")
 
-    # Fallback to cached content for common topics
-    topic = prompt.lower().split("about")[-1].strip()
-    for keyword, content in FALLBACK_CONTENT.items():
-        if keyword in topic and keyword != "default":
-            return content, None
+    # Improved fallback content
+    topic = prompt.lower().split("about")[-1].strip().rstrip('.')
+    fallback_content = f"""# {topic.capitalize()}
 
-    # Final fallback
-    return FALLBACK_CONTENT["default"], None
+### Lesson 1: Introduction to {topic}
+- Key concept 1
+- Key concept 2  
+- Key concept 3
 
-def estimate_learning_time(text: str) -> str:
-    """Estimate learning time based on word count."""
-    if not text:
-        return "Time estimate unavailable"
-    word_count = len(text.split())
-    minutes = max(1, round(word_count/100))
-    return f"{minutes} minute{'s' if minutes > 1 else ''}"
+**Summary:**  
+Basic introduction to the field and its importance.
+
+### Lesson 2: Core Techniques
+- Technique 1
+- Technique 2  
+- Technique 3
+
+**Summary:**  
+Overview of fundamental methods used in this field."""
+    
+    return fallback_content, None
 
 def format_lesson_content(topic: str, content: str) -> str:
-    """Format lesson content consistently."""
+    """Ensure clean formatting without duplicate headers."""
     if not content:
-        return content
-    if not content.startswith(f"# {topic}"):
-        content = f"# {topic}\n\n{content}"
-    return content
+        return ""
+    
+    # Remove any existing topic header
+    content = "\n".join([line for line in content.split("\n") 
+                        if not line.strip().lower().startswith(f"# {topic.lower()}")])
+    
+    # Add single clean header
+    return f"# {topic}\n\n{content.strip()}"
+
+
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
