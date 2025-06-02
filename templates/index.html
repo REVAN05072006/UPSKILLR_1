@@ -1,154 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UpSkillr - Micro-Course Generator</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UpSkillr</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>UpSkillr</h1>
-      <p class="subtitle">Personalized Micro-Course Generator</p>
-    </header>
+    <div class="container">
+        <h1>UpSkillr</h1>
+        <p style="text-align: center; color: #666;">Personalized Micro-Course Generator</p>
 
-    <form method="POST" action="/" class="search-form">
-      {% if error %}
-      <div class="error-message">{{ error }}</div>
-      {% endif %}
-      
-      <input type="text" name="topic" placeholder="What do you want to learn today?" required>
-      <button type="submit">Generate Course</button>
-    </form>
-
-    {% if show_content %}
-    <div class="course-container">
-      <h2>Your Micro-Course: <span style="color: var(--primary-light)">{{ topic }}</span></h2>
-      <div class="course-content">
-        {{ content|safe }}
-      </div>
-      
-      <form method="GET" action="/quiz">
-        <input type="hidden" name="topic" value="{{ topic }}">
-        <input type="hidden" name="content" value="{{ content }}">
-        <button type="submit" class="quiz-btn">Take Quiz Now</button>
-      </form>
-    </div>
-    {% endif %}
-
-    {% if quiz_data %}
-    <div class="quiz-container">
-      <div class="quiz-header">
-        <h2>Test Your Knowledge</h2>
-        <div class="question-counter">Question 1 of {{ quiz_data.questions|length }}</div>
-      </div>
-      
-      <div class="progress-container">
-        <div class="progress-bar" id="quiz-progress"></div>
-      </div>
-      
-      <form method="POST" action="/submit-quiz" id="quiz-form">
-        <input type="hidden" name="topic" value="{{ topic }}">
-        
-        {% for question in quiz_data.questions %}
-        {% set q_index = loop.index %}
-        <div class="quiz-question" id="question-{{ q_index }}" {% if not loop.first %}style="display:none"{% endif %}>
-          <h3>{{ question.text }}</h3>
-          <input type="hidden" name="question_{{ q_index }}" value="{{ question.text }}">
-          <input type="hidden" name="correct_{{ q_index }}" value="{{ question.correct }}">
-          <input type="hidden" name="correct_full_{{ q_index }}" value="{{ question.correct_full }}">
-          
-          <div class="quiz-options">
-            {% for option in question.options %}
-            <label class="quiz-option">
-              <input type="radio" name="q_{{ q_index }}" value="{{ option }}" required>
-              <span>{{ option }}</span>
-            </label>
-            {% endfor %}
-          </div>
-          
-          <div class="quiz-navigation">
-            {% if not loop.first %}
-            <button type="button" class="quiz-nav-btn prev-btn" onclick="showQuestion({{ q_index - 1 }})">
-              Previous
-            </button>
+        <form method="POST" action="/" class="search-form">
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
             {% endif %}
             
-            {% if not loop.last %}
-            <button type="button" class="quiz-nav-btn next-btn" onclick="showQuestion({{ q_index + 1 }})" disabled>
-              Next
-            </button>
-            {% else %}
-            <button type="submit" class="submit-quiz">Submit Quiz</button>
-            {% endif %}
-          </div>
+            <input type="text" name="topic" placeholder="What do you want to learn today?" required 
+                   value="{{ topic if topic else '' }}">
+            <button type="submit">Generate Course</button>
+        </form>
+
+        {% if show_content and content %}
+        <div class="course-content">
+            {{ content|safe }}
         </div>
-        {% endfor %}
-      </form>
+        {% endif %}
     </div>
-
-    <script>
-      function showQuestion(questionNum) {
-        document.querySelectorAll('.quiz-question').forEach(q => {
-          q.style.display = 'none';
-        });
-
-        const currentQuestion = document.getElementById(`question-${questionNum}`);
-        currentQuestion.style.display = 'block';
-
-        document.querySelector('.question-counter').textContent = `Question ${questionNum} of {{ quiz_data.questions|length }}`;
-
-        const progress = ((questionNum - 1) / {{ quiz_data.questions|length }}) * 100;
-        document.getElementById('quiz-progress').style.width = `${progress}%`;
-
-        window.scrollTo({ top: currentQuestion.offsetTop - 100, behavior: 'smooth' });
-      }
-
-      document.querySelectorAll('.quiz-option input[type="radio"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-          const label = this.closest('.quiz-option');
-          label.classList.add('selected-answer');
-
-          const siblings = label.parentElement.querySelectorAll('.quiz-option');
-          siblings.forEach(sib => {
-            if (sib !== label) {
-              sib.classList.remove('selected-answer');
-            }
-          });
-
-          const nextBtn = label.closest('.quiz-question').querySelector('.next-btn');
-          if (nextBtn) {
-            nextBtn.disabled = false;
-            nextBtn.classList.remove('disabled');
-          }
-        });
-      });
-    </script>
-    {% endif %}
-
-    {% if quiz_result %}
-    <div class="quiz-result">
-      <h2>Quiz Results</h2>
-      <div class="score">{{ quiz_result.score }}/{{ quiz_result.total }}</div>
-      <p>{{ quiz_result.feedback }}</p>
-      
-      {% if quiz_result.results %}
-      <div class="result-details">
-        {% for result in quiz_result.results %}
-        <div class="result-item {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
-          <h4>Question {{ loop.index }}: {{ result.question }}</h4>
-          <p>Your answer: {{ result.user_answer }}</p>
-          <p>Correct answer: {{ result.correct_answer }}</p>
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-      
-      <a href="/" class="quiz-btn">Learn Something New</a>
-    </div>
-    {% endif %}
-  </div>
 </body>
 </html>
