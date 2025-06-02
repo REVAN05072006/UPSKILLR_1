@@ -12,26 +12,22 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "your-default-secret-key")
 
 # Constants
 MAX_TOKENS = 4000
-DEFAULT_MODEL = "openai/gpt-4o"
-LESSON_TEMPLATE = """### Lesson {number}: {title}
+DEFAULT_MODEL = "gpt-4"
 
-**Key Points:**
-- {points}
-
-**Summary:**
-{summary}
-"""
-
-# Initialize GitHub AI client
 def get_ai_client() -> Optional[OpenAI]:
     """Initialize and return the OpenAI client configured for GitHub AI."""
     try:
         token = os.getenv("GITHUB_TOKEN")
         if not token:
             raise ValueError("GitHub token is missing from environment variables")
+        
         return OpenAI(
-            base_url="https://models.github.ai/inference",
-            api_key=token
+            base_url="https://api.githubcopilot.com/v1",
+            api_key=token,
+            default_headers={
+                "Authorization": f"Bearer {token}",
+                "X-GitHub-Api-Version": "2023-07-07"
+            }
         )
     except Exception as e:
         app.logger.error(f"Error initializing AI client: {e}")
