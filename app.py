@@ -9,15 +9,15 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
 
-# Configuration - HARDCODED KEY FOR TESTING (replace with your actual key)
-OPENROUTER_API_KEY = "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"  # Replace with os.getenv() after testing
+# Configuration - Use environment variable in production
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
 MODEL_NAME = "deepseek/deepseek-chat-v3-0324:free"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 HEADERS = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-    "HTTP-Referer": "http://localhost:5000",  # Must match exactly
-    "X-Title": "UpSkillr",  # Must match exactly
+    "HTTP-Referer": "https://upskillr.onrender.com",  # Update for production
+    "X-Title": "UpSkillr",
     "Content-Type": "application/json"
 }
 
@@ -37,16 +37,16 @@ def format_content_to_html(content):
             
         # Check for lesson headers (containing "Lesson" and numbers)
         if re.match(r'^(Lesson\s*\d+|Chapter\s*\d+|\d+\.)', line, re.IGNORECASE):
-            formatted_lines.append(f'<h2 class="lesson-title">{line}</h2>')
+            formatted_lines.append(f'<h2 class="lesson-title" data-aos="fade-up">{line}</h2>')
         # Check for section headers (lines ending with colon or starting with ##)
         elif line.endswith(':') or line.startswith('##'):
             clean_line = line.replace('##', '').strip().rstrip(':')
-            formatted_lines.append(f'<h3 class="section-title">{clean_line}</h3>')
+            formatted_lines.append(f'<h3 class="section-title" data-aos="fade-left">{clean_line}</h3>')
         # Check for bullet points or numbered lists
         elif re.match(r'^[\-\*\+]\s+', line) or re.match(r'^\d+\.\s+', line):
             # Start a list if we're not already in one
             if not formatted_lines or not formatted_lines[-1].startswith('<ul>'):
-                formatted_lines.append('<ul class="content-list">')
+                formatted_lines.append('<ul class="content-list" data-aos="fade-up">')
             clean_line = re.sub(r'^[\-\*\+]\s+', '', line)
             clean_line = re.sub(r'^\d+\.\s+', '', clean_line)
             formatted_lines.append(f'<li>{clean_line}</li>')
@@ -56,7 +56,7 @@ def format_content_to_html(content):
                 formatted_lines.append('</ul>')
             # Regular paragraph
             if line:
-                formatted_lines.append(f'<p class="content-paragraph">{line}</p>')
+                formatted_lines.append(f'<p class="content-paragraph" data-aos="fade-right">{line}</p>')
     
     # Close any remaining open list
     if formatted_lines and formatted_lines[-1].startswith('<li>'):
@@ -134,10 +134,6 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    # Startup checks
-    print("\n=== CONFIGURATION CHECK ===")
-    print(f"API Key: {OPENROUTER_API_KEY[:10]}...{OPENROUTER_API_KEY[-5:]}")
-    print(f"Model: {MODEL_NAME}")
-    print("==========================\n")
-        
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Get port from environment variable for Render deployment
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
