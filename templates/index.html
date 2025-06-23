@@ -3,9 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UpSkillr - Learn Anything</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>UpSkillr - Neural Learning Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-glow: #00d4ff;
+            --secondary-glow: #ff6b35;
+            --accent-glow: #c77dff;
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #1a1a2e;
+            --bg-card: rgba(26, 26, 46, 0.6);
+            --text-primary: #ffffff;
+            --text-secondary: #a8b2d1;
+            --border-glow: rgba(0, 212, 255, 0.3);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,124 +26,321 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
             min-height: 100vh;
-            color: #e2e8f0;
-            padding: 20px;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(199, 125, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 40%, rgba(255, 107, 53, 0.05) 0%, transparent 50%);
+        }
+
+        .floating-orbs {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary-glow), var(--accent-glow));
+            filter: blur(1px);
+            animation: float 8s ease-in-out infinite;
+            opacity: 0.1;
+        }
+
+        .orb:nth-child(1) {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .orb:nth-child(2) {
+            width: 150px;
+            height: 150px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        .orb:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        /* Grid Pattern */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-move 20s linear infinite;
+        }
+
+        @keyframes grid-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
         }
 
         .container {
-            max-width: 1000px;
-            margin: 30px auto;
-            padding: 40px;
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
         }
 
-        h1 {
-            background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+        /* Header Section */
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 4.5rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, var(--primary-glow) 0%, var(--accent-glow) 50%, var(--secondary-glow) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-align: center;
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+            margin-bottom: 20px;
+            text-shadow: 0 0 60px var(--primary-glow);
+            animation: pulse-glow 3s ease-in-out infinite;
+            position: relative;
+        }
+
+        .logo::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: linear-gradient(45deg, var(--primary-glow), var(--accent-glow));
+            border-radius: 20px;
+            opacity: 0.1;
+            animation: rotate 10s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 20px var(--primary-glow)); }
+            50% { filter: brightness(1.2) drop-shadow(0 0 40px var(--primary-glow)); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .tagline {
-            text-align: center;
-            color: #94a3b8;
-            margin-bottom: 40px;
-            font-size: 1.1rem;
+            font-size: 1.4rem;
+            color: var(--text-secondary);
             font-weight: 300;
+            margin-bottom: 20px;
+            opacity: 0.9;
         }
 
-        form {
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary-glow);
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Form Section */
+        .form-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glow);
+            border-radius: 24px;
+            padding: 40px;
+            margin: 40px 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+            animation: scan 3s infinite;
+        }
+
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .input-group {
+            position: relative;
             margin-bottom: 30px;
         }
 
-        input[type="text"] {
+        .input-field {
             width: 100%;
-            padding: 16px 20px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(148, 163, 184, 0.2);
-            border-radius: 12px;
-            font-size: 16px;
-            color: #e2e8f0;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
+            padding: 20px 25px;
+            background: rgba(10, 10, 15, 0.8);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 16px;
+            font-size: 18px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
         }
 
-        input[type="text"]:focus {
+        .input-field:focus {
             outline: none;
-            border-color: #8b5cf6;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-            background: rgba(15, 23, 42, 0.8);
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+            background: rgba(10, 10, 15, 0.95);
+            transform: translateY(-2px);
         }
 
-        input[type="text"]::placeholder {
-            color: #64748b;
+        .input-field::placeholder {
+            color: rgba(168, 178, 209, 0.6);
+            font-weight: 300;
         }
 
-        button {
-            background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
-            color: white;
-            border: none;
-            padding: 16px 32px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
+        .generate-btn {
             width: 100%;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-glow) 0%, var(--accent-glow) 100%);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
             position: relative;
             overflow: hidden;
+            transition: all 0.4s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 212, 255, 0.4);
         }
 
-        button:active {
-            transform: translateY(0);
+        .generate-btn:active {
+            transform: translateY(-1px);
         }
 
+        .generate-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-overlay {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .generate-btn:hover .btn-overlay {
+            left: 100%;
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error Message */
         .error-message {
-            color: #fca5a5;
-            background: rgba(220, 38, 38, 0.1);
-            padding: 16px 20px;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-left: 4px solid var(--secondary-glow);
+            color: #ffb3a7;
+            padding: 20px 25px;
             border-radius: 12px;
-            margin-bottom: 20px;
-            border-left: 4px solid #dc2626;
-            border: 1px solid rgba(220, 38, 38, 0.2);
+            margin-bottom: 25px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
         }
 
+        /* Course Content */
         .course-content {
-            margin-top: 40px;
-            padding: 40px;
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 16px;
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            backdrop-filter: blur(5px);
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glow);
+            border-radius: 24px;
+            padding: 50px;
+            margin-top: 50px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
         }
 
         .lesson-title {
-            color: #8b5cf6;
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin: 30px 0 20px 0;
-            padding-bottom: 12px;
-            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+            color: var(--primary-glow);
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 40px 0 25px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
             position: relative;
+            text-shadow: 0 0 20px var(--primary-glow);
         }
 
         .lesson-title:first-child {
@@ -142,160 +352,223 @@
             position: absolute;
             bottom: -2px;
             left: 0;
-            width: 60px;
+            width: 80px;
             height: 2px;
-            background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+            background: linear-gradient(90deg, var(--primary-glow), var(--accent-glow));
+            box-shadow: 0 0 10px var(--primary-glow);
         }
 
         .section-title {
-            color: #06b6d4;
-            font-size: 1.3rem;
-            font-weight: 500;
-            margin: 25px 0 15px 0;
-            padding-left: 15px;
-            border-left: 3px solid #06b6d4;
+            color: var(--accent-glow);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 30px 0 20px 0;
+            padding-left: 20px;
+            border-left: 3px solid var(--accent-glow);
+            position: relative;
+        }
+
+        .section-title::before {
+            content: '▶';
+            position: absolute;
+            left: -15px;
+            color: var(--accent-glow);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .content-paragraph {
-            color: #cbd5e1;
-            line-height: 1.7;
-            margin-bottom: 16px;
-            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 400;
         }
 
         .content-list {
-            margin: 20px 0;
+            margin: 25px 0;
             padding-left: 0;
             list-style: none;
         }
 
         .content-list li {
-            color: #cbd5e1;
-            margin-bottom: 12px;
-            padding-left: 30px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            padding-left: 40px;
             position: relative;
-            line-height: 1.6;
+            line-height: 1.7;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
         }
 
         .content-list li::before {
-            content: "▸";
-            color: #06b6d4;
+            content: "◆";
+            color: var(--secondary-glow);
             font-size: 1.2rem;
             position: absolute;
-            left: 8px;
+            left: 15px;
             top: 0;
+            animation: glow-pulse 3s ease-in-out infinite;
         }
 
         .content-list li:hover {
-            color: #e2e8f0;
-            transition: color 0.2s ease;
+            color: var(--text-primary);
+            transform: translateX(10px);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
-        /* Loading animation */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(139, 92, 246, 0.3);
-            border-radius: 50%;
-            border-top-color: #8b5cf6;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
+        @keyframes glow-pulse {
+            0%, 100% { text-shadow: 0 0 5px var(--secondary-glow); }
+            50% { text-shadow: 0 0 15px var(--secondary-glow); }
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Responsive design */
+        /* Responsive Design */
         @media (min-width: 768px) {
-            form {
+            .form-container form {
                 display: flex;
-                gap: 15px;
+                gap: 20px;
                 align-items: flex-start;
             }
             
-            input[type="text"] {
+            .input-field {
                 margin-bottom: 0;
                 flex: 1;
             }
             
-            button {
+            .generate-btn {
                 width: auto;
-                min-width: 200px;
+                min-width: 250px;
             }
 
-            h1 {
-                font-size: 4rem;
+            .logo {
+                font-size: 6rem;
             }
         }
 
         @media (max-width: 768px) {
             .container {
-                padding: 20px;
-                margin: 10px;
+                padding: 20px 15px;
             }
 
-            h1 {
-                font-size: 2.5rem;
+            .logo {
+                font-size: 3rem;
+            }
+
+            .form-container {
+                padding: 25px;
             }
 
             .course-content {
-                padding: 20px;
+                padding: 30px 25px;
+            }
+
+            .lesson-title {
+                font-size: 1.8rem;
             }
         }
 
-        /* Scrollbar styling */
+        /* Scrollbar Styling */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 10px;
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.5);
+            background: var(--bg-primary);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(139, 92, 246, 0.5);
-            border-radius: 4px;
+            background: linear-gradient(45deg, var(--primary-glow), var(--accent-glow));
+            border-radius: 5px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(139, 92, 246, 0.7);
+            background: linear-gradient(45deg, var(--accent-glow), var(--secondary-glow));
+        }
+
+        /* Success Animation */
+        .success-glow {
+            animation: success-pulse 2s ease-in-out;
+        }
+
+        @keyframes success-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(0, 212, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
         }
     </style>
 </head>
 <body>
+    <!-- Animated Background -->
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+    <div class="floating-orbs">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
     <div class="container">
-        <h1>UpSkillr</h1>
-        <p class="tagline">Master any topic in 3 comprehensive lessons</p>
+        <!-- Header -->
+        <header class="header" data-aos="fade-down">
+            <h1 class="logo">UpSkillr</h1>
+            <p class="tagline">Neural Learning Platform</p>
+            <p class="subtitle">Adaptive • Intelligent • Futuristic</p>
+        </header>
 
-        <form method="POST" action="/" id="courseForm">
-            {% if error %}
-            <div class="error-message">{{ error }}</div>
-            {% endif %}
-                        
-            <input type="text" name="topic" placeholder="Try 'Machine Learning', 'React.js', or 'Digital Marketing'"
-                    value="{{ topic if topic else '' }}" required>
-            <button type="submit" id="generateBtn">
-                <span id="btnText">Generate Course</span>
-            </button>
-        </form>
+        <!-- Form Section -->
+        <div class="form-container" data-aos="fade-up" data-aos-delay="200">
+            <form method="POST" action="/" id="courseForm">
+                {% if error %}
+                <div class="error-message" data-aos="shake">{{ error }}</div>
+                {% endif %}
+                
+                <div class="input-group">
+                    <input type="text" 
+                           name="topic" 
+                           class="input-field"
+                           placeholder="Enter learning domain: AI, Blockchain, Quantum Computing..."
+                           value="{{ topic if topic else '' }}" 
+                           required>
+                </div>
+                
+                <button type="submit" class="generate-btn" id="generateBtn">
+                    <div class="btn-overlay"></div>
+                    <span id="btnText">Initialize Learning</span>
+                </button>
+            </form>
+        </div>
 
+        <!-- Course Content -->
         {% if show_content and content %}
-        <div class="course-content">
+        <div class="course-content success-glow" data-aos="fade-up" data-aos-delay="400">
             {{ content|safe }}
         </div>
         {% endif %}
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <script>
-        // Add loading state to button
+        // Initialize AOS
+        AOS.init({
+            duration: 1000,
+            once: true,
+            offset: 100
+        });
+
+        // Form submission with loading state
         document.getElementById('courseForm').addEventListener('submit', function() {
             const btn = document.getElementById('generateBtn');
             const btnText = document.getElementById('btnText');
             
             btn.disabled = true;
-            btnText.innerHTML = '<span class="loading"></span>Generating...';
+            btnText.innerHTML = '<span class="loading-spinner"></span>Processing Neural Network...';
+            
+            // Add some visual feedback
+            btn.style.background = 'linear-gradient(135deg, #666 0%, #999 100%)';
         });
 
         // Smooth scroll to content when it appears
@@ -305,8 +578,44 @@
                 behavior: 'smooth',
                 block: 'start'
             });
-        }, 100);
+        }, 300);
         {% endif %}
+
+        // Add some interactive effects
+        document.addEventListener('mousemove', function(e) {
+            const orbs = document.querySelectorAll('.orb');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            orbs.forEach((orb, index) => {
+                const speed = (index + 1) * 0.5;
+                const xPos = x * speed * 10;
+                const yPos = y * speed * 10;
+                
+                orb.style.transform = `translate(${xPos}px, ${yPos}px)`;
+            });
+        });
+
+        // Add typing effect to placeholder
+        const input = document.querySelector('.input-field');
+        const placeholders = [
+            'Enter learning domain: Machine Learning...',
+            'Enter learning domain: Web Development...',
+            'Enter learning domain: Data Science...',
+            'Enter learning domain: Cybersecurity...',
+            'Enter learning domain: Cloud Computing...'
+        ];
+        
+        let currentPlaceholder = 0;
+        
+        function changePlaceholder() {
+            if (input && !input.value) {
+                input.placeholder = placeholders[currentPlaceholder];
+                currentPlaceholder = (currentPlaceholder + 1) % placeholders.length;
+            }
+        }
+        
+        setInterval(changePlaceholder, 3000);
     </script>
 </body>
 </html>
